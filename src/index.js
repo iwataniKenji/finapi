@@ -7,6 +7,7 @@ app.use(express.json());
 
 const customers = [];
 
+// criar conta
 app.post("/account", (req, res) => {
   // informação vem da solicitação
   const { cpf, name } = req.body;
@@ -26,6 +27,18 @@ app.post("/account", (req, res) => {
   });
 
   return res.status(201).send();
+});
+
+// listando extrato
+app.get("/statement/:cpf", (req, res) => {
+  // pega o cpf pelo parâmetro
+  const { cpf } = req.params;
+
+  // encontra o objeto que possui esse cpf
+  const customer = customers.find((customer) => customer.cpf === cpf);
+
+  // retorna o array statement do cliente
+  return res.json(customer.statement);
 });
 
 // inicializa na porta 3333
