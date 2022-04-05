@@ -7,6 +7,25 @@ app.use(express.json());
 
 const customers = [];
 
+// middleware
+function verifyIfExistsAccountCPF(req, res, next) {
+  // pega o cpf pelos headers params
+  const { cpf } = req.headers;
+
+  // encontra o objeto que possui esse cpf
+  const customer = customers.find((customer) => customer.cpf === cpf);
+
+  // nao existe = erro
+  if (!customer) {
+    return res.status(400).json({ error: "Customer not found" });
+  }
+
+  req.customer = customer;
+
+  // existe = continua processo
+  return next();
+}
+
 // criar conta
 app.post("/account", (req, res) => {
   // informação vem da solicitação
@@ -30,12 +49,8 @@ app.post("/account", (req, res) => {
 });
 
 // listando extrato
-app.get("/statement/:cpf", (req, res) => {
-  // pega o cpf pelo parâmetro
-  const { cpf } = req.params;
-
-  // encontra o objeto que possui esse cpf
-  const customer = customers.find((customer) => customer.cpf === cpf);
+app.get("/statement", verifyIfExistsAccountCPF, (req, res) => {
+  const { customer } = req;
 
   // retorna o array statement do cliente
   return res.json(customer.statement);
