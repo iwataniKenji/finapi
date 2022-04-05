@@ -2,7 +2,6 @@ const express = require("express");
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
-
 app.use(express.json());
 
 const customers = [];
@@ -26,9 +25,23 @@ function verifyIfExistsAccountCPF(req, res, next) {
   return next();
 }
 
+// pega extrato da conta
+function getBalance(statement) {
+  // reduz todos os valores em um, iniciando com zero
+  const balance = statement.reduce((acc, operation) => {
+    if (operation.type === "credit") {
+      return acc + operation.amount;
+    } else {
+      return acc - operation.amount;
+    }
+  }, 0);
+
+  return balance;
+}
+
 // criar conta
 app.post("/account", (req, res) => {
-  // informação vem da solicitação
+  // pegando valores do request
   const { cpf, name } = req.body;
 
   const customerAlreadyExists = customers.some(
@@ -50,10 +63,58 @@ app.post("/account", (req, res) => {
 
 // listando extrato
 app.get("/statement", verifyIfExistsAccountCPF, (req, res) => {
+  // pegando valores do request
   const { customer } = req;
 
-  // retorna o array statement do cliente
+  // retornando array com extrato do cliente
   return res.json(customer.statement);
+});
+
+// criando depósito
+app.post("/deposit", verifyIfExistsAccountCPF, (req, res) => {
+  // pegando valores do request
+  const { description, amount } = req.body;
+  const { customer } = req;
+
+  // criando objeto de transação
+  const statementOperation = {
+    description,
+    amount,
+    create_at: new Date(),
+    type: "credit",
+  };
+
+  // inserindo transação no usuário
+  customer.statement.push(statementOperation);
+
+  return res.status(201).send();
+});
+
+// criando saque
+app.post("/withdraw", verifyIfExistsAccountCPF, (req, res) => {
+  // pegando valores do request
+  const { amount } = req.body;
+  const { customer } = req;
+
+  // pegando extrato da conta
+  const balance = getBalance(customer.statement);
+
+  // checando suficiência
+  if (balance < amount) {
+    return res.status(400).json({ error: "Insufficient funds!" });
+  }
+
+  // criando objeto de transação
+  const statementOperation = {
+    amount,
+    create_at: new Date(),
+    type: "debit",
+  };
+
+  // inserindo transação no usuário
+  customer.statement.push(statementOperation);
+
+  return res.status(201).send();
 });
 
 // inicializa na porta 3333
