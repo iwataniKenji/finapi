@@ -136,5 +136,24 @@ app.get("/statement/date", verifyIfExistsAccountCPF, (req, res) => {
   return res.json(statement);
 });
 
+// alterar nome da conta
+app.put("/account", verifyIfExistsAccountCPF, (req, res) => {
+  // pegando valores do request
+  const { name } = req.body;
+  const { customer } = req;
+
+  // trocando nome do usuário
+  customer.name = name;
+
+  return res.status(201).send();
+});
+
+// retornar conta
+app.get("/account", verifyIfExistsAccountCPF, (req, res) => {
+  const { customer } = req;
+
+  return res.json(customer);
+});
+
 // inicializa na porta 3333
 app.listen(3333);
