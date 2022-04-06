@@ -8,26 +8,24 @@ const customers = [];
 
 // middleware
 function verifyIfExistsAccountCPF(req, res, next) {
-  // pega o cpf pelos headers params
   const { cpf } = req.headers;
 
-  // encontra o objeto que possui esse cpf
   const customer = customers.find((customer) => customer.cpf === cpf);
 
-  // nao existe = erro
+  // doesn't exists = error
   if (!customer) {
     return res.status(400).json({ error: "Customer not found" });
   }
 
   req.customer = customer;
 
-  // existe = continua processo
+  // exists = proceed
   return next();
 }
 
-// pega extrato da conta
+// getting account balance
 function getBalance(statement) {
-  // reduz todos os valores em um, iniciando com zero
+  // reduce to one value
   const balance = statement.reduce((acc, operation) => {
     if (operation.type === "credit") {
       return acc + operation.amount;
@@ -39,9 +37,8 @@ function getBalance(statement) {
   return balance;
 }
 
-// criar conta
+// creating account
 app.post("/account", (req, res) => {
-  // pegando valores do request
   const { cpf, name } = req.body;
 
   const customerAlreadyExists = customers.some(
@@ -61,22 +58,18 @@ app.post("/account", (req, res) => {
   return res.status(201).send();
 });
 
-// listando extrato
+// listing statement
 app.get("/statement", verifyIfExistsAccountCPF, (req, res) => {
-  // pegando valores do request
   const { customer } = req;
 
-  // retornando array com extrato do cliente
   return res.json(customer.statement);
 });
 
-// criando depósito
+// creating deposit
 app.post("/deposit", verifyIfExistsAccountCPF, (req, res) => {
-  // pegando valores do request
   const { description, amount } = req.body;
   const { customer } = req;
 
-  // criando objeto de transação
   const statementOperation = {
     description,
     amount,
@@ -84,78 +77,68 @@ app.post("/deposit", verifyIfExistsAccountCPF, (req, res) => {
     type: "credit",
   };
 
-  // inserindo transação no usuário
   customer.statement.push(statementOperation);
 
   return res.status(201).send();
 });
 
-// criando saque
+// creating withdraw
 app.post("/withdraw", verifyIfExistsAccountCPF, (req, res) => {
-  // pegando valores do request
   const { amount } = req.body;
   const { customer } = req;
 
-  // pegando extrato da conta
   const balance = getBalance(customer.statement);
 
-  // checando suficiência
+  // checking funds
   if (balance < amount) {
     return res.status(400).json({ error: "Insufficient funds!" });
   }
 
-  // criando objeto de transação
   const statementOperation = {
     amount,
     create_at: new Date(),
     type: "debit",
   };
 
-  // inserindo transação no usuário
   customer.statement.push(statementOperation);
 
   return res.status(201).send();
 });
 
-// listando extrato por data
+// listing statement by date
 app.get("/statement/date", verifyIfExistsAccountCPF, (req, res) => {
-  // pegando valores do request
   const { customer } = req;
   const { date } = req.query;
 
-  // encontra dia independente do horário
   const dateFormat = new Date(date + " 00:00");
 
-  // encontra movimentação que condiz com req
+  // searching transaction with the request
   const statement = customer.statement.filter(
     (statement) =>
       statement.create_at.toDateString() === new Date(dateFormat).toDateString()
   );
 
-  // retornando array com extrato do cliente
   return res.json(statement);
 });
 
-// alterar nome da conta
+// changing name of account
 app.put("/account", verifyIfExistsAccountCPF, (req, res) => {
-  // pegando valores do request
   const { name } = req.body;
   const { customer } = req;
 
-  // trocando nome do usuário
   customer.name = name;
 
   return res.status(201).send();
 });
 
-// retornar conta
+// returning account info
 app.get("/account", verifyIfExistsAccountCPF, (req, res) => {
   const { customer } = req;
 
   return res.json(customer);
 });
 
-// removendo conta
+// removing account
 app.delete("/account", verifyIfExistsAccountCPF, (req, res) => {
   const { customer } = req;
 
@@ -164,7 +147,7 @@ app.delete("/account", verifyIfExistsAccountCPF, (req, res) => {
   return res.status(200).json(customers);
 });
 
-// retornar extrato
+// returning account balance
 app.get("/balance", verifyIfExistsAccountCPF, (req, res) => {
   const { customer } = req;
 
@@ -172,6 +155,6 @@ app.get("/balance", verifyIfExistsAccountCPF, (req, res) => {
 
   return res.json(balance);
 });
- 
-// inicializa na porta 3333
+
+// initializing on port 3333
 app.listen(3333);
