@@ -117,5 +117,24 @@ app.post("/withdraw", verifyIfExistsAccountCPF, (req, res) => {
   return res.status(201).send();
 });
 
+// listando extrato por data
+app.get("/statement/date", verifyIfExistsAccountCPF, (req, res) => {
+  // pegando valores do request
+  const { customer } = req;
+  const { date } = req.query;
+
+  // encontra dia independente do horário
+  const dateFormat = new Date(date + " 00:00");
+
+  // encontra movimentação que condiz com req
+  const statement = customer.statement.filter(
+    (statement) =>
+      statement.create_at.toDateString() === new Date(dateFormat).toDateString()
+  );
+
+  // retornando array com extrato do cliente
+  return res.json(statement);
+});
+
 // inicializa na porta 3333
 app.listen(3333);
