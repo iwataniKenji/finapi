@@ -155,5 +155,23 @@ app.get("/account", verifyIfExistsAccountCPF, (req, res) => {
   return res.json(customer);
 });
 
+// removendo conta
+app.delete("/account", verifyIfExistsAccountCPF, (req, res) => {
+  const { customer } = req;
+
+  customers.splice(customer, 1);
+
+  return res.status(200).json(customers);
+});
+
+// retornar extrato
+app.get("/balance", verifyIfExistsAccountCPF, (req, res) => {
+  const { customer } = req;
+
+  const balance = getBalance(customer.statement);
+
+  return res.json(balance);
+});
+ 
 // inicializa na porta 3333
 app.listen(3333);
